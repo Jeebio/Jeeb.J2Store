@@ -28,9 +28,9 @@
             <fieldset name="basic" addrulepath="plugins/j2store/payment_jeeb/validation">
                 <field name="display_name" type="text" size="30" default="Jeeb Payment" label="j2store_plugin_display_name" description="j2store_plugin_display_name_desc" required="required" />
                 <field type="spacer" />
-                <field name="signature" type="text" default="" label="Signature" description="Api Key" required="required" />
+                <field name="signature" type="text" default="" label="Signature" description="Enter your Jeeb signature" required="required" />
                 <field type="spacer" />
-                <field name="baseCur" type="radio" default="btc" label="Base Currency" description="Select Base currency">
+                <field name="baseCur" type="radio" default="btc" label="Base Currency" description="The base currency of your website.">
                     <option value="btc">BTC</option>
                     <option value="eur">EUR</option>
                     <option value="irr">IRR</option>
@@ -38,16 +38,22 @@
                     <option value="usd">USD</option>
                 </field>
                 <field type="spacer" />
-                <field name="sandbox" type="radio" default="0" label="Sandbox" description="Select the environmant">
+                <field name="sandbox" type="radio" default="0" label="Allow TestNets" description="Allows testnets such as TEST-BTC to get processed.">
+                    <option value="0">J2STORE_NO</option>
+                    <option value="1">J2STORE_YES</option>
+                </field>
+                <field name="allowRefund" type="radio" default="0" label="Allow Refund" description="Allows payments to be refunded.">
                     <option value="0">J2STORE_NO</option>
                     <option value="1">J2STORE_YES</option>
                 </field>
                 <field type="spacer" />
-                <field name="targetCur" type="text" label="Target Currency" default="btc/test-btc" description="" required="required"/>
-                <field type="spacer" label="Options = [btc,bch,eth,ltc,xmr,xrp,test-btc] (Use '/' to enter more than 1 option)" />
+                <field name="targetCur" type="text" label="Payable Currency" default="btc/test-btc" description="The currencies which users can use for payments." required="required"/>
+                <field type="spacer" label="Options = [btc,bch,eth,ltc,xmr,xrp,test-btc,test-ltc] (Use '/' to enter more than 1 option)" />
                 <field type="spacer" label="Eg: For selecting eth,ltc and xrp use 'eth/ltc/xrp'" />
                 <field type="spacer" />
-                <field name="lang" type="radio" default="none" label="Language" description="Select the language">
+                <field name="expiration" type="text" default="" label="Expiration Time" description="Expands default payments expiration time. It should be between 15 to 2880 (mins)." required="required" />
+                <field type="spacer" />
+                <field name="lang" type="radio" default="none" label="Language" description="The language of the payment area.">
                     <option value="none">Auto-Select</option>
                     <option value="en">English</option>
                     <option value="fa">Persian</option>
