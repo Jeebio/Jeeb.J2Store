@@ -44,7 +44,7 @@ class plgJ2StorePayment_jeeb extends J2StorePaymentPlugin {
         'type'      => 0,
     );
 
-    const PLUGIN_NAME = 'prestashop1.7';
+    const PLUGIN_NAME = 'J2Store';
     const PLUGIN_VERSION = '3.0';
     const BASE_URL = "https://core.jeeb.io/api/";
 
