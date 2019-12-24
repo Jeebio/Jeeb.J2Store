@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="2.5" type="plugin" group="j2store" method="upgrade">
+<extension version="3.0" type="plugin" group="j2store" method="upgrade">
     <name>Jeeb Payment for j2store</name>
-    <version>2</version>
-    <creationDate>08.05.2018</creationDate>
+    <version>3.0</version>
     <author>Jeeb</author>
     <authorEmail>info@jeeb.io</authorEmail>
     <authorUrl>https://www.jeeb.io/</authorUrl>
@@ -31,24 +30,30 @@
                 <field name="signature" type="text" default="" label="Signature" description="Enter your Jeeb signature" required="required" />
                 <field type="spacer" />
                 <field name="baseCur" type="radio" default="btc" label="Base Currency" description="The base currency of your website.">
-                    <option value="btc">BTC</option>
-                    <option value="eur">EUR</option>
-                    <option value="irr">IRR</option>
-                    <option value="toman">TOMAN</option>
-                    <option value="usd">USD</option>
+                    <option value="btc">BTC (Bitcoin)</option>
+                    <option value="irr">IRR (Iranian Rial)</option>
+                    <option value="toman">IRT (Iranian Toman)</option>
+                    <option value="usd">USD (US Dollar)</option>
+                    <option value="eur">EUR (Euro)</option>
+                    <option value="gbp">GBP (British Pound)</option>
+                    <option value="cad">CAD (Canadian Dollar)</option>
+                    <option value="aud">AUD (Australian Dollar)</option>
+                    <option value="try">TRY (Turkish Lira)</option>
+                    <option value="cny">CNY (Chinese Yuan)</option>
+                    <option value="jpy">JPY (Japanese Yen)</option>
                 </field>
                 <field type="spacer" />
                 <field name="sandbox" type="radio" default="0" label="Allow TestNets" description="Allows testnets such as TEST-BTC to get processed.">
-                    <option value="0">J2STORE_NO</option>
-                    <option value="1">J2STORE_YES</option>
+                    <option value="0">NO</option>
+                    <option value="1">YES</option>
                 </field>
                 <field name="allowRefund" type="radio" default="0" label="Allow Refund" description="Allows payments to be refunded.">
-                    <option value="0">J2STORE_NO</option>
-                    <option value="1">J2STORE_YES</option>
+                    <option value="0">NO</option>
+                    <option value="1">YES</option>
                 </field>
                 <field type="spacer" />
                 <field name="targetCur" type="text" label="Payable Currency" default="btc/test-btc" description="The currencies which users can use for payments." required="required"/>
-                <field type="spacer" label="Options = [btc,bch,eth,ltc,xmr,xrp,test-btc,test-ltc] (Use '/' to enter more than 1 option)" />
+                <field type="spacer" label="Options = [btc,bch,eth,ltc] (Use '/' to enter more than 1 option)" />
                 <field type="spacer" label="Eg: For selecting eth,ltc and xrp use 'eth/ltc/xrp'" />
                 <field type="spacer" />
                 <field name="expiration" type="text" default="" label="Expiration Time" description="Expands default payments expiration time. It should be between 15 to 2880 (mins)." required="required" />
