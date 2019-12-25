@@ -44,6 +44,10 @@ class plgJ2StorePayment_jeeb extends J2StorePaymentPlugin {
         'type'      => 0,
     );
 
+    const PLUGIN_NAME = 'J2Store';
+    const PLUGIN_VERSION = '3.0';
+    const BASE_URL = "https://core.jeeb.io/api/";
+
     /**
      * @inheritdoc
      * @param object $subject
@@ -74,37 +78,47 @@ class plgJ2StorePayment_jeeb extends J2StorePaymentPlugin {
         $callBack     = $this->getBaseUrl(). "index.php?option=com_j2store&task=checkout.confirmPayment&orderpayment_type=payment_jeeb";
         $notification = $this->getBaseUrl(). "index.php?option=com_j2store&task=checkout.confirmPayment&orderpayment_type=payment_jeeb&notification=true";
         $order_total  = $price;
+        $expiration   = $this->params->get('expiration');
 
         error_log($vars->amount." ".$baseUri." ".$signature." ".$callBack." ".$notification);
-        
+
 
         if($baseCur=='toman'){
           $baseCur='irr';
           $order_total *= 10;
         }
-        
+
+        if($expiration == NULL ||
+        is_numeric($expiration) === false ||
+        $expiration< 15 ||
+        $expiration> 2880){
+          $expiration = 15;
+        }
+
+
         error_log("Cost = ". $order_total);
 
-        $amount = $this->convertIrrToBtc($baseUri, $order_total, $signature, $baseCur);
+        $amount = $this->convert_base_to_bitcoin($order_total, $signature, $baseCur);
 
         $params = array(
           'orderNo'          => $data['order_id'],
           'value'            => (float) $amount,
           'webhookUrl'       => $notification,
           'callBackUrl'      => $callBack,
-          'allowReject'      => $this->params->get('sandbox')==0 ? true : false,
+          'expiration'       => $expiration,
+          'allowReject'      => $this->params->get('allowRefund')==1 ? true : false,
           "coins"            => $target_cur,
           "allowTestNet"     => $this->params->get('sandbox')==1 ? true : false,
           "language"         => $lang
         );
-        
+
         error_log(var_export($params, TRUE));
 
-        $token = $this->createInvoice($baseUri, $amount, $params, $signature);
+        $token = $this->create_payment($params, $signature);
 
         //Needed for Jeeb
-        $vars->baseUrl      = "https://core.jeeb.io/api/";
-        $vars->token           = $token;
+        $vars->baseUrl      = self::BASE_URL;
+        $vars->token        = $token;
 
 
         $html = $this->_getLayout('prepayment', $vars);
@@ -178,10 +192,6 @@ class plgJ2StorePayment_jeeb extends J2StorePaymentPlugin {
 
           $orderId = $json['orderNo'];
 
-          // Call Jeeb
-          $network_uri = "https://core.jeeb.io/api/";
-
-
           error_log("Entered Jeeb-Notification");
           if ( $json['stateId']== 2 ) {
             error_log('Order Id received = '.$json['orderNo'].' stateId = '.$json['stateId']);
@@ -199,26 +209,9 @@ class plgJ2StorePayment_jeeb extends J2StorePaymentPlugin {
               "token" => $json["token"]
             );
 
-            $data_string = json_encode($data);
-            $api_key = $this->params->get('signature');
-            $url = $network_uri.'payments/' . $api_key . '/confirm';
-            error_log("Signature:".$api_key." Base-Url:".$network_uri." Url:".$url);
+            $is_confirmed = $this->confirm_payment($this->params->get('signature'), $data);
 
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($data_string))
-            );
-
-            $result = curl_exec($ch);
-            $data = json_decode( $result , true);
-            error_log("data = ".var_export($data, TRUE));
-
-
-            if($data['result']['isConfirmed']){
+            if($is_confirmed){
               error_log('Payment confirmed by jeeb');
               $this->setCompleteStatus($orderId);
             }
@@ -361,43 +354,65 @@ class plgJ2StorePayment_jeeb extends J2StorePaymentPlugin {
         return 0;
     }
 
-    public function convertIrrToBtc($url, $amount, $signature, $baseCur) {
+    public function convert_base_to_bitcoin($amount, $signature, $baseCur) {
+        error_log("Entered into Convert Base To Target");
 
         // return Jeeb::convert_irr_to_btc($url, $amount, $signature);
-        $ch = curl_init($url.'currency?'.$signature.'&value='.$amount.'&base='.$baseCur.'&target=btc');
+        $ch = curl_init(self::BASE_URL.'currency?'.$signature.'&value='.$amount.'&base='.$baseCur.'&target=btc');
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-          'Content-Type: application/json')
+          'Content-Type: application/json',
+          'User-Agent:'.self::PLUGIN_NAME . '/' . self::PLUGIN_VERSION)
       );
 
       $result = curl_exec($ch);
       $data = json_decode( $result , true);
-      error_log("Response => ".var_export($data, TRUE));;
+      error_log('Response =>'. var_export($data, TRUE));
       // Return the equivalent bitcoin value acquired from Jeeb server.
       return (float) $data["result"];
 
       }
 
 
-      public function createInvoice($url, $amount, $options = array(), $signature) {
+      public function create_payment($options = array(), $signature) {
 
           $post = json_encode($options);
 
-          $ch = curl_init($url.'payments/' . $signature . '/issue/');
+          $ch = curl_init(self::BASE_URL.'payments/' . $signature . '/issue/');
           curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
           curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
           curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
           curl_setopt($ch, CURLOPT_HTTPHEADER, array(
               'Content-Type: application/json',
-              'Content-Length: ' . strlen($post))
+              'Content-Length: ' . strlen($post),
+              'User-Agent:'.self::PLUGIN_NAME . '/' . self::PLUGIN_VERSION)
           );
 
           $result = curl_exec($ch);
-          $data = json_decode( $result , true);
-          error_log("data = ".var_export($data, TRUE));
+          $data = json_decode( $result ,true );
+          error_log('Response =>'. var_export($data, TRUE));
 
           return $data['result']['token'];
+
+      }
+
+
+      public function confirm_payment($signature, $options = array()) {
+
+          $post = json_encode($options);
+          $ch = curl_init(self::BASE_URL . 'payments/' . $signature . '/confirm/');
+          curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+          curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+          curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+          curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+              'Content-Type:application/json',
+              'User-Agent:' . self::PLUGIN_NAME . '/' . self::PLUGIN_VERSION,
+          ));
+          $result = curl_exec($ch);
+          $data = json_decode($result, true);
+          error_log('Response =>'. var_export($data, TRUE));
+          return (bool) $data['result']['isConfirmed'];
 
       }
     }
